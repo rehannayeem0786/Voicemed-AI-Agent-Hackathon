@@ -1,0 +1,238 @@
+{
+  // VoiceMed AI — Medical Triage Voice Agent ("Aria")
+  //
+  // This file is in "stored agent" shape: the same body accepted by
+  // POST https://agents.assemblyai.com/v1/agents (see publish_agent.py).
+  // The FastAPI bridge also converts it on the fly into the inline
+  // `session.update` payload (see app/agent_config.py), so one file drives
+  // both deployment paths.
+  //
+  // Docs: https://www.assemblyai.com/docs/voice-agents/voice-agent-api/
+  "name": "VoiceMed AI Triage Nurse",
+
+  // Voice-first rules: one short question at a time, plain language, and
+  // explicit tool-calling behavior. The agent NEVER diagnoses and always
+  // escalates red flags via the emergency_alert tool.
+  // Prompting guide: https://www.assemblyai.com/docs/voice-agents/voice-agent-api/prompting-guide
+  "system_prompt": "You are Aria, a warm and skilled AI medical triage nurse for VoiceMed AI. You guide patients through a structured triage interview over a voice call.\n\nVOICE RULES:\n- Keep every reply to ONE or TWO short sentences. Ask exactly ONE question at a time, then stop and listen.\n- Plain language only. No medical jargon, no bullet points, no lists — this is spoken aloud.\n- Sound human: acknowledge pain and worry briefly ('I'm sorry that sounds rough') before the next question. No exclamation marks.\n\nINTERVIEW FLOW:\n1. Chief complaint: 'What's the main reason for your call today?' Then when it started.\n2. Symptom detail: location, severity on a 1-10 scale, what makes it better or worse, associated symptoms.\n3. History: current medications (call drug_interaction_check as soon as you have two or more names), allergies, major conditions.\n4. Red-flag screening: always ask about chest pain, trouble breathing, severe bleeding, stroke signs (face drooping, arm weakness, slurred speech), and suicidal thoughts.\n5. Assessment: call triage_assessment with everything collected, then call generate_soap_note to create the clinical note. Summarize the recommendation in one sentence and offer to book a visit with book_appointment.\n\nTOOL RULES:\n- Use symptom_lookup when the patient describes symptoms, and fold the follow-up questions it returns into your own next question.\n- Use drug_interaction_check whenever medications are mentioned.\n- IMMEDIATELY call emergency_alert the moment the patient mentions suicidal thoughts, self-harm, chest pain with sweating or shortness of breath, stroke signs, severe bleeding, or anaphylaxis. Tell them you are getting help and to call 911 if symptoms are severe.\n- After any tool returns, speak its key finding in one short sentence. Never read raw JSON aloud.\n\nSAFETY:\n- You are not a doctor and never diagnose. Say 'this could be related to' rather than 'you have'.\n- Never give dosage advice or prescribe anything.\n- If the patient is in immediate danger, instruct them to call 911 (or 988 for a mental health crisis) and stay with them.",
+
+  // The greeting is spoken once on connect — it makes the session feel alive.
+  "greeting": "Hi, I'm Aria, your VoiceMed triage nurse. What's the main reason for your call today?",
+
+  // Voice catalog: https://www.assemblyai.com/docs/voice-agents/voice-agent-api/voices
+  "voice": { "voice_id": "alba" },
+
+  "input": {
+    "format": { "encoding": "audio/pcm" },
+    "language_codes": ["en"],
+    // Snappier turns than the defaults: a triage interview is question ->
+    // answer, answer, answer. Barge-in stays on so patients can interrupt.
+    "transcription_mode": "balanced",
+    "transcription_prompt": "Expect medical vocabulary: symptoms like dyspnea, hemoptysis, tachycardia; drugs like warfarin, lisinopril, metformin, sertraline, ibuprofen, acetaminophen; ESI triage levels; EpiPen; 911.",
+    "keyterms": [
+      "ESI", "triage", "EpiPen", "anaphylaxis", "911", "988",
+      "warfarin", "aspirin", "ibuprofen", "acetaminophen", "lisinopril",
+      "metformin", "sertraline", "tramadol", "metoprolol", "simvastatin",
+      "chest pain", "shortness of breath", "slurred speech", "facial drooping"
+    ],
+    "turn_detection": {
+      "vad_threshold": 0.5,
+      "min_silence": 700,
+      "max_silence": 2000,
+      "interrupt_response": true,
+      "interruption_delay": 100
+    }
+  },
+
+  "output": {
+    "format": { "encoding": "audio/pcm" },
+    "volume": 100
+  },
+
+  // Client-side function tools: each runs in our FastAPI bridge against the
+  // local clinical databases in data/, and the result goes back to the agent
+  // with tool.result (queued until reply.done, per the API contract).
+  // Critical tools use execution_mode "hold" so the caller stays with Aria
+  // while they run.
+  // https://www.assemblyai.com/docs/voice-agents/voice-agent-api/tools/client-side-tools
+  "tools": [
+    {
+      "type": "function",
+      "name": "symptom_lookup",
+      "description": "Search the medical symptom database for matching conditions, severity indicators, red flags, and suggested follow-up questions. Use this as soon as the patient describes symptoms, and weave the returned questions into your interview.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "symptoms": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Reported symptoms, e.g. ['chest pain', 'nausea']"
+          },
+          "duration_hours": {
+            "type": "number",
+            "description": "How long symptoms have been present, in hours"
+          },
+          "severity": {
+            "type": "integer",
+            "description": "Patient-reported severity on a 1-10 scale"
+          }
+        },
+        "required": ["symptoms"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "drug_interaction_check",
+      "description": "Check the patient's medications against a clinical interaction database for dangerous combinations. Use this whenever any medication is mentioned.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "medications": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Names of the medications the patient is taking"
+          }
+        },
+        "required": ["medications"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "triage_assessment",
+      "description": "Score the patient's urgency on the Emergency Severity Index (ESI 1-5, where 1 is most critical) from the collected interview data. Call this after the symptom deep-dive and red-flag screening.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "chief_complaint": {
+            "type": "string",
+            "description": "The main reason for the visit, in the patient's words"
+          },
+          "symptoms": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "All symptoms reported so far"
+          },
+          "severity_score": {
+            "type": "integer",
+            "description": "Patient-reported severity, 1-10"
+          },
+          "duration_hours": {
+            "type": "number",
+            "description": "Duration of symptoms in hours"
+          },
+          "age": {
+            "type": "integer",
+            "description": "Patient age in years, if known"
+          },
+          "vital_signs_abnormal": {
+            "type": "boolean",
+            "description": "True if the patient reported abnormal vitals (e.g. measured fever, racing heart)"
+          },
+          "has_red_flags": {
+            "type": "boolean",
+            "description": "True if any emergency red flag symptoms are present"
+          }
+        },
+        "required": ["chief_complaint", "symptoms", "severity_score"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "generate_soap_note",
+      "description": "Generate a structured SOAP (Subjective, Objective, Assessment, Plan) clinical note from the triage conversation. Call this near the end of the interview, after triage_assessment.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subjective": {
+            "type": "string",
+            "description": "Patient's reported symptoms, history, and concerns in their own words"
+          },
+          "objective": {
+            "type": "string",
+            "description": "Observable data: reported vitals, severity scores, duration"
+          },
+          "assessment": {
+            "type": "string",
+            "description": "Clinical impression: possible conditions and triage level"
+          },
+          "plan": {
+            "type": "string",
+            "description": "Recommended next steps: self-care, telehealth, urgent care, or ER"
+          },
+          "icd10_codes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Relevant ICD-10 codes, e.g. ['R07.9']"
+          }
+        },
+        "required": ["subjective", "assessment", "plan"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "book_appointment",
+      "description": "Book a follow-up appointment with the appropriate healthcare provider. Offer this once the patient has a triage recommendation and agrees to schedule.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_type": {
+            "type": "string",
+            "enum": ["telehealth", "urgent_care", "primary_care", "specialist", "emergency"],
+            "description": "Type of appointment to book"
+          },
+          "preferred_date": {
+            "type": "string",
+            "description": "Patient's preferred date, e.g. 'tomorrow' or 'next Monday'"
+          },
+          "preferred_time": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "evening"],
+            "description": "Preferred time of day"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Brief reason for the appointment"
+          }
+        },
+        "required": ["appointment_type", "reason"]
+      },
+      "execution_mode": "interactive",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "emergency_alert",
+      "description": "CRITICAL: trigger an emergency alert when life-threatening symptoms are detected (chest pain, difficulty breathing, stroke signs, severe bleeding, suicidal ideation, anaphylaxis). Call this IMMEDIATELY when red flags appear, then tell the patient to call 911.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "emergency_type": {
+            "type": "string",
+            "enum": ["cardiac", "respiratory", "neurological", "trauma", "mental_health", "allergic", "other"],
+            "description": "Type of emergency detected"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief description of the emergency"
+          },
+          "patient_symptoms": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Critical symptoms that triggered the alert"
+          }
+        },
+        "required": ["emergency_type", "description"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 10
+    }
+  ]
+}

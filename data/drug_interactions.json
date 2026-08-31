@@ -1,0 +1,166 @@
+{
+  "interactions": [
+    {
+      "drug_a": "warfarin",
+      "drug_b": "aspirin",
+      "severity": "high",
+      "effect": "Significantly increased risk of bleeding. Both drugs affect blood clotting through different mechanisms.",
+      "recommendation": "Avoid combination unless specifically directed by physician. Monitor for signs of bleeding."
+    },
+    {
+      "drug_a": "lisinopril",
+      "drug_b": "potassium supplements",
+      "severity": "high",
+      "effect": "Risk of hyperkalemia (dangerously high potassium levels). ACE inhibitors retain potassium.",
+      "recommendation": "Monitor potassium levels regularly. Avoid potassium supplements unless directed."
+    },
+    {
+      "drug_a": "metformin",
+      "drug_b": "alcohol",
+      "severity": "high",
+      "effect": "Increased risk of lactic acidosis, a rare but serious condition. Alcohol also affects blood sugar.",
+      "recommendation": "Limit alcohol consumption. Seek immediate care if experiencing muscle pain, weakness, or difficulty breathing."
+    },
+    {
+      "drug_a": "ssri",
+      "drug_b": "nsaid",
+      "severity": "moderate",
+      "effect": "Increased risk of gastrointestinal bleeding. SSRIs reduce platelet function.",
+      "recommendation": "Use lowest effective dose of NSAID for shortest duration. Consider gastroprotective agent."
+    },
+    {
+      "drug_a": "metoprolol",
+      "drug_b": "verapamil",
+      "severity": "high",
+      "effect": "Excessive cardiac depression. Both slow heart rate and reduce blood pressure.",
+      "recommendation": "Avoid combination. Risk of severe bradycardia and heart block."
+    },
+    {
+      "drug_a": "simvastatin",
+      "drug_b": "grapefruit",
+      "severity": "moderate",
+      "effect": "Grapefruit increases statin blood levels, raising risk of muscle damage (rhabdomyolysis).",
+      "recommendation": "Avoid grapefruit or switch to a statin not affected by grapefruit (e.g., rosuvastatin)."
+    },
+    {
+      "drug_a": "ciprofloxacin",
+      "drug_b": "antacids",
+      "severity": "moderate",
+      "effect": "Antacids containing aluminum or magnesium reduce ciprofloxacin absorption significantly.",
+      "recommendation": "Take ciprofloxacin 2 hours before or 6 hours after antacids."
+    },
+    {
+      "drug_a": "sertraline",
+      "drug_b": "tramadol",
+      "severity": "high",
+      "effect": "Risk of serotonin syndrome — a potentially life-threatening condition with symptoms including agitation, tremor, and high body temperature.",
+      "recommendation": "Avoid combination. If both necessary, use lowest doses and monitor closely."
+    },
+    {
+      "drug_a": "lisinopril",
+      "drug_b": "ibuprofen",
+      "severity": "moderate",
+      "effect": "NSAIDs can reduce the blood pressure-lowering effect of ACE inhibitors and increase kidney damage risk.",
+      "recommendation": "Use acetaminophen for pain relief instead when possible. Monitor blood pressure and kidney function."
+    },
+    {
+      "drug_a": "metformin",
+      "drug_b": "contrast dye",
+      "severity": "high",
+      "effect": "IV contrast dye with metformin increases risk of lactic acidosis, especially with kidney impairment.",
+      "recommendation": "Stop metformin 48 hours before contrast procedures. Resume after kidney function confirmed normal."
+    },
+    {
+      "drug_a": "warfarin",
+      "drug_b": "vitamin k",
+      "severity": "moderate",
+      "effect": "Vitamin K counteracts warfarin's blood-thinning effect, potentially causing blood clots.",
+      "recommendation": "Maintain consistent vitamin K intake. Do not start supplements without consulting physician."
+    },
+    {
+      "drug_a": "amoxicillin",
+      "drug_b": "methotrexate",
+      "severity": "high",
+      "effect": "Amoxicillin can reduce kidney clearance of methotrexate, increasing toxicity risk.",
+      "recommendation": "Monitor methotrexate levels. Consider alternative antibiotic."
+    },
+    {
+      "drug_a": "fluoxetine",
+      "drug_b": "maoi",
+      "severity": "critical",
+      "effect": "CRITICAL: Life-threatening serotonin syndrome. This combination is contraindicated.",
+      "recommendation": "NEVER combine. Allow 5-week washout period when switching between these medications."
+    },
+    {
+      "drug_a": "digoxin",
+      "drug_b": "amiodarone",
+      "severity": "high",
+      "effect": "Amiodarone significantly increases digoxin blood levels, risking toxicity (nausea, vision changes, arrhythmia).",
+      "recommendation": "Reduce digoxin dose by 50% when starting amiodarone. Monitor digoxin levels closely."
+    },
+    {
+      "drug_a": "amlodipine",
+      "drug_b": "simvastatin",
+      "severity": "moderate",
+      "effect": "Amlodipine increases simvastatin levels, raising risk of muscle problems.",
+      "recommendation": "Limit simvastatin to 20mg daily when combined with amlodipine."
+    },
+    {
+      "drug_a": "clopidogrel",
+      "drug_b": "omeprazole",
+      "severity": "moderate",
+      "effect": "Omeprazole reduces the activation of clopidogrel, potentially decreasing its anti-clotting effectiveness.",
+      "recommendation": "Consider pantoprazole as an alternative PPI, which has less interaction."
+    },
+    {
+      "drug_a": "levothyroxine",
+      "drug_b": "calcium",
+      "severity": "moderate",
+      "effect": "Calcium supplements reduce levothyroxine absorption.",
+      "recommendation": "Take levothyroxine 4 hours before or after calcium supplements."
+    },
+    {
+      "drug_a": "insulin",
+      "drug_b": "beta blockers",
+      "severity": "moderate",
+      "effect": "Beta blockers can mask symptoms of low blood sugar (hypoglycemia) and slow recovery.",
+      "recommendation": "Monitor blood sugar more frequently. Be aware that typical warning signs may be absent."
+    },
+    {
+      "drug_a": "lithium",
+      "drug_b": "ibuprofen",
+      "severity": "high",
+      "effect": "NSAIDs increase lithium blood levels by reducing kidney clearance, risking toxicity.",
+      "recommendation": "Avoid NSAIDs. Use acetaminophen for pain. Monitor lithium levels if NSAID unavoidable."
+    },
+    {
+      "drug_a": "sildenafil",
+      "drug_b": "nitrates",
+      "severity": "critical",
+      "effect": "CRITICAL: Severe, potentially fatal drop in blood pressure. This combination is contraindicated.",
+      "recommendation": "NEVER combine. Allow at least 24 hours between sildenafil and nitrate medications."
+    }
+  ],
+  "drug_aliases": {
+    "aspirin": ["asa", "acetylsalicylic acid", "bayer"],
+    "ibuprofen": ["advil", "motrin", "nsaid"],
+    "acetaminophen": ["tylenol", "paracetamol"],
+    "warfarin": ["coumadin", "jantoven"],
+    "lisinopril": ["zestril", "prinivil"],
+    "metformin": ["glucophage", "fortamet"],
+    "sertraline": ["zoloft"],
+    "fluoxetine": ["prozac"],
+    "simvastatin": ["zocor"],
+    "metoprolol": ["lopressor", "toprol"],
+    "amlodipine": ["norvasc"],
+    "omeprazole": ["prilosec"],
+    "levothyroxine": ["synthroid", "levoxyl"],
+    "clopidogrel": ["plavix"],
+    "tramadol": ["ultram"],
+    "amoxicillin": ["amoxil"],
+    "ciprofloxacin": ["cipro"],
+    "digoxin": ["lanoxin"],
+    "sildenafil": ["viagra"],
+    "lithium": ["lithobid", "eskalith"]
+  }
+}

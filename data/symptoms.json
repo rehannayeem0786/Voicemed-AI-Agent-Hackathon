@@ -1,0 +1,164 @@
+{
+  "symptoms": [
+    {
+      "name": "headache",
+      "category": "neurological",
+      "severity_base": 3,
+      "red_flags": ["sudden severe onset", "worst headache of life", "with neck stiffness", "with vision changes", "after head injury"],
+      "associated_conditions": ["tension headache", "migraine", "sinusitis", "hypertension", "meningitis"],
+      "questions": ["Is the headache on one side or both?", "Is it throbbing or constant pressure?", "Any sensitivity to light or sound?"]
+    },
+    {
+      "name": "chest pain",
+      "category": "cardiac",
+      "severity_base": 8,
+      "red_flags": ["radiating to arm or jaw", "with shortness of breath", "with sweating", "crushing or squeezing", "with nausea"],
+      "associated_conditions": ["angina", "myocardial infarction", "costochondritis", "GERD", "pulmonary embolism"],
+      "questions": ["Does the pain radiate anywhere?", "Does it worsen with breathing?", "Any history of heart disease?"]
+    },
+    {
+      "name": "fever",
+      "category": "systemic",
+      "severity_base": 4,
+      "red_flags": ["above 103°F/39.4°C", "lasting more than 3 days", "with stiff neck", "with rash", "in immunocompromised patient"],
+      "associated_conditions": ["viral infection", "bacterial infection", "UTI", "pneumonia", "COVID-19"],
+      "questions": ["What is your temperature?", "How long have you had the fever?", "Any chills or night sweats?"]
+    },
+    {
+      "name": "abdominal pain",
+      "category": "gastrointestinal",
+      "severity_base": 5,
+      "red_flags": ["rigid abdomen", "with bloody stool", "severe and sudden onset", "with fever above 101°F", "during pregnancy"],
+      "associated_conditions": ["gastritis", "appendicitis", "gallstones", "kidney stones", "IBS"],
+      "questions": ["Where exactly is the pain?", "Is it constant or comes and goes?", "Any nausea, vomiting, or changes in bowel habits?"]
+    },
+    {
+      "name": "shortness of breath",
+      "category": "respiratory",
+      "severity_base": 7,
+      "red_flags": ["sudden onset", "at rest", "with chest pain", "with swollen legs", "cannot speak full sentences"],
+      "associated_conditions": ["asthma", "COPD exacerbation", "pneumonia", "pulmonary embolism", "heart failure"],
+      "questions": ["Did it come on suddenly or gradually?", "Is it worse when lying down?", "Any wheezing or cough?"]
+    },
+    {
+      "name": "cough",
+      "category": "respiratory",
+      "severity_base": 3,
+      "red_flags": ["coughing blood", "lasting more than 3 weeks", "with weight loss", "with night sweats", "with high fever"],
+      "associated_conditions": ["upper respiratory infection", "bronchitis", "pneumonia", "asthma", "GERD"],
+      "questions": ["Is the cough dry or producing mucus?", "What color is the mucus?", "Any blood when coughing?"]
+    },
+    {
+      "name": "dizziness",
+      "category": "neurological",
+      "severity_base": 4,
+      "red_flags": ["with slurred speech", "with facial drooping", "with arm weakness", "sudden severe onset", "with vision loss"],
+      "associated_conditions": ["BPPV", "inner ear infection", "orthostatic hypotension", "anemia", "stroke"],
+      "questions": ["Is the room spinning or do you feel lightheaded?", "Does it worsen with position changes?", "Any hearing changes?"]
+    },
+    {
+      "name": "back pain",
+      "category": "musculoskeletal",
+      "severity_base": 4,
+      "red_flags": ["with leg weakness or numbness", "with loss of bladder control", "after trauma", "with fever", "unexplained weight loss"],
+      "associated_conditions": ["muscle strain", "herniated disc", "sciatica", "spinal stenosis", "kidney infection"],
+      "questions": ["Does the pain radiate to your legs?", "Any numbness or tingling?", "Did it start after an injury?"]
+    },
+    {
+      "name": "nausea",
+      "category": "gastrointestinal",
+      "severity_base": 3,
+      "red_flags": ["with blood in vomit", "with severe abdominal pain", "unable to keep fluids down for 24+ hours", "with head injury", "during pregnancy with severe symptoms"],
+      "associated_conditions": ["gastroenteritis", "food poisoning", "pregnancy", "medication side effect", "appendicitis"],
+      "questions": ["Are you vomiting as well?", "When did it start?", "Could you be pregnant?"]
+    },
+    {
+      "name": "sore throat",
+      "category": "ENT",
+      "severity_base": 2,
+      "red_flags": ["difficulty swallowing saliva", "drooling", "unable to open mouth", "with breathing difficulty", "with neck swelling"],
+      "associated_conditions": ["pharyngitis", "strep throat", "tonsillitis", "mononucleosis", "peritonsillar abscess"],
+      "questions": ["Any difficulty swallowing?", "Any white patches on your throat?", "Any fever with it?"]
+    },
+    {
+      "name": "fatigue",
+      "category": "systemic",
+      "severity_base": 2,
+      "red_flags": ["sudden onset with chest pain", "with unexplained weight loss", "with blood in stool", "lasting more than 2 weeks", "with shortness of breath"],
+      "associated_conditions": ["anemia", "thyroid disorder", "depression", "diabetes", "chronic fatigue syndrome"],
+      "questions": ["How long have you been feeling tired?", "Is it affecting your daily activities?", "Any changes in weight or appetite?"]
+    },
+    {
+      "name": "rash",
+      "category": "dermatological",
+      "severity_base": 3,
+      "red_flags": ["with fever", "rapidly spreading", "with difficulty breathing", "with facial swelling", "purple/non-blanching spots"],
+      "associated_conditions": ["allergic reaction", "eczema", "psoriasis", "cellulitis", "meningococcal disease"],
+      "questions": ["When did the rash first appear?", "Is it itchy or painful?", "Any new medications, foods, or products?"]
+    },
+    {
+      "name": "joint pain",
+      "category": "musculoskeletal",
+      "severity_base": 4,
+      "red_flags": ["hot red swollen joint", "with fever", "after tick bite", "in multiple joints suddenly", "with inability to bear weight"],
+      "associated_conditions": ["osteoarthritis", "rheumatoid arthritis", "gout", "septic arthritis", "Lyme disease"],
+      "questions": ["Which joints are affected?", "Any swelling or redness?", "Worse in the morning or after activity?"]
+    },
+    {
+      "name": "urinary symptoms",
+      "category": "urological",
+      "severity_base": 4,
+      "red_flags": ["blood in urine", "with flank pain and fever", "inability to urinate", "in males with perineal pain", "with confusion in elderly"],
+      "associated_conditions": ["UTI", "kidney stones", "prostatitis", "bladder infection", "kidney infection"],
+      "questions": ["Any burning when urinating?", "How often are you going?", "Any blood in your urine?"]
+    },
+    {
+      "name": "anxiety",
+      "category": "mental_health",
+      "severity_base": 4,
+      "red_flags": ["with suicidal thoughts", "with self-harm", "panic attacks with chest pain", "inability to function", "with substance use"],
+      "associated_conditions": ["generalized anxiety disorder", "panic disorder", "PTSD", "thyroid disorder", "medication side effect"],
+      "questions": ["How long have you been feeling anxious?", "Any specific triggers?", "Any thoughts of harming yourself?"]
+    },
+    {
+      "name": "eye pain",
+      "category": "ophthalmological",
+      "severity_base": 5,
+      "red_flags": ["sudden vision loss", "with flashing lights or floaters", "after chemical exposure", "with severe redness", "with halos around lights"],
+      "associated_conditions": ["conjunctivitis", "corneal abrasion", "glaucoma", "retinal detachment", "foreign body"],
+      "questions": ["Is your vision affected?", "Any discharge from the eye?", "Did anything hit or splash in your eye?"]
+    },
+    {
+      "name": "swelling in legs",
+      "category": "vascular",
+      "severity_base": 5,
+      "red_flags": ["one leg only with pain", "with redness and warmth", "with shortness of breath", "sudden onset", "with chest pain"],
+      "associated_conditions": ["deep vein thrombosis", "heart failure", "venous insufficiency", "lymphedema", "cellulitis"],
+      "questions": ["Is it one leg or both?", "Any redness or warmth?", "Any recent surgery or long travel?"]
+    },
+    {
+      "name": "numbness or tingling",
+      "category": "neurological",
+      "severity_base": 5,
+      "red_flags": ["one side of body", "with facial drooping", "with speech difficulty", "sudden onset", "with weakness"],
+      "associated_conditions": ["carpal tunnel", "peripheral neuropathy", "stroke", "multiple sclerosis", "herniated disc"],
+      "questions": ["Where is the numbness?", "Did it come on suddenly?", "Any weakness on one side of your body?"]
+    },
+    {
+      "name": "bleeding",
+      "category": "trauma",
+      "severity_base": 6,
+      "red_flags": ["cannot be stopped with pressure", "from an artery (bright red spurting)", "with dizziness", "on blood thinners", "internal (vomiting or coughing blood)"],
+      "associated_conditions": ["laceration", "GI bleed", "epistaxis", "hemorrhage", "coagulopathy"],
+      "questions": ["Where is the bleeding from?", "How much blood have you lost?", "Are you on blood thinners?"]
+    },
+    {
+      "name": "allergic reaction",
+      "category": "immunological",
+      "severity_base": 7,
+      "red_flags": ["throat swelling", "difficulty breathing", "tongue swelling", "widespread hives", "dizziness/fainting"],
+      "associated_conditions": ["anaphylaxis", "urticaria", "angioedema", "drug allergy", "food allergy"],
+      "questions": ["What were you exposed to?", "Any difficulty breathing or swallowing?", "Do you have an EpiPen?"]
+    }
+  ]
+}

@@ -1,0 +1,237 @@
+{
+  // VoiceMed AI — Enfermera de triaje médico por voz ("Aria") — variante en español
+  //
+  // Misma forma "stored agent" que agents/voicemed_triage.jsonc (la acepta
+  // POST /v1/agents y el puente la convierte a session.update inline).
+  // La selecciona GET /session-config?lang=es y publish_agent.py puede
+  // publicarla como un agente independiente.
+  // Docs: https://www.assemblyai.com/docs/voice-agents/voice-agent-api/
+  "name": "VoiceMed AI Enfermera de Triaje",
+
+  // Reglas de voz: una pregunta corta a la vez, lenguaje llano, y
+  // comportamiento explícito de herramientas. Nunca diagnostica y siempre
+  // escala señales de alarma mediante la herramienta emergency_alert.
+  "system_prompt": "Eres Aria, una enfermera de triaje médico cálida y experta de VoiceMed AI. Guías al paciente por una entrevista de triaje estructurada en una llamada de voz. Habla SIEMPRE en español.\n\nREGLAS DE VOZ:\n- Cada respuesta de UNA o DOS frases cortas. Haz exactamente UNA pregunta a la vez y detente a escuchar.\n- Lenguaje llano, sin jerga médica, sin viñetas ni listas — esto se lee en voz alta.\n- Suena humana: reconoce brevemente el dolor o la preocupación ('Lamento que te sientas así') antes de la siguiente pregunta. Sin signos de exclamación.\n\nFLUJO DE LA ENTREVISTA:\n1. Motivo de consulta: '¿Cuál es el motivo principal de tu llamada hoy?' Luego cuándo empezó.\n2. Detalle de síntomas: localización, intensidad en una escala de 1 a 10, qué lo mejora o empeora, síntomas asociados.\n3. Historia: medicamentos actuales (llama a drug_interaction_check en cuanto tengas dos o más nombres), alergias, condiciones importantes.\n4. Detección de señales de alarma: pregunta siempre por dolor en el pecho, dificultad para respirar, sangrado intenso, signos de derrame (cara caída, debilidad en un brazo, dificultad para hablar) y pensamientos suicidas.\n5. Valoración: llama a triage_assessment con todo lo recogido, luego a generate_soap_note para crear la nota clínica. Resume la recomendación en una frase y ofrece agendar una consulta con book_appointment.\n\nREGLAS DE HERRAMIENTAS:\n- Usa symptom_lookup cuando el paciente describa síntomas, e integra las preguntas de seguimiento que devuelva en tu siguiente pregunta.\n- Usa drug_interaction_check siempre que se mencionen medicamentos.\n- Llama INMEDIATAMENTE a emergency_alert en cuanto el paciente mencione pensamientos suicidas, autolesiones, dolor en el pecho con sudoración o falta de aire, signos de derrame, sangrado intenso o anafilaxia. Dile que estás pidiendo ayuda y que llame al 911 si los síntomas son graves.\n- Tras cada herramienta, di su hallazgo clave en una frase corta. Nunca leas JSON en voz alta.\n\nSEGURIDAD:\n- No eres médica y nunca diagnosticas. Di 'esto podría estar relacionado con' en lugar de 'tienes'.\n- Nunca des consejos de dosificación ni recetes nada.\n- Si el paciente está en peligro inmediato, indícale llamar al 911 (o al 988 para una crisis de salud mental) y quédate con él o ella.\n- Números de emergencia en EE. UU.: 911 emergencias, 988 línea de crisis suicida.",
+
+  // Se habla una vez al conectar — hace que la sesión se sienta viva.
+  "greeting": "Hola, soy Aria, tu enfermera de triaje de VoiceMed. ¿Cuál es el motivo principal de tu llamada hoy?",
+
+  // Catálogo de voces: https://www.assemblyai.com/docs/voice-agents/voice-agent-api/voices
+  // "lola" es la voz con acento nativo español (cambia de código con el inglés);
+  // "alba"/"eve" son las voces de inglés estadounidense.
+  "voice": { "voice_id": "lola" },
+
+  "input": {
+    "format": { "encoding": "audio/pcm" },
+    "language_codes": ["es"],
+    // Turnos ágiles: la entrevista de triaje es pregunta -> respuesta,
+    // respuesta, respuesta. Barge-in activo para que el paciente interrumpa.
+    "transcription_mode": "balanced",
+    "transcription_prompt": "Espera vocabulario médico en español: síntomas como disnea, hemoptisis, taquicardia, mareo, náuseas; medicamentos como warfarina, aspirina, ibuprofeno, paracetamol, lisinopril, metformina, sertralina; niveles de triaje ESI; EpiPen; 911; 988.",
+    "keyterms": [
+      "ESI", "triaje", "EpiPen", "anafilaxia", "911", "988",
+      "warfarina", "aspirina", "ibuprofeno", "paracetamol", "lisinopril",
+      "metformina", "sertralina", "tramadol", "metoprolol", "simvastatina",
+      "dolor en el pecho", "falta de aire", "dificultad para hablar", "cara caída"
+    ],
+    "turn_detection": {
+      "vad_threshold": 0.5,
+      "min_silence": 700,
+      "max_silence": 2000,
+      "interrupt_response": true,
+      "interruption_delay": 100
+    }
+  },
+
+  "output": {
+    "format": { "encoding": "audio/pcm" },
+    "volume": 100
+  },
+
+  // Herramientas de función client-side: se ejecutan en el puente FastAPI
+  // contra las bases clínicas locales de data/ y el resultado vuelve al
+  // agente con tool.result (en cola hasta reply.done, según el contrato).
+  // Las herramientas críticas usan execution_mode "hold" para que el paciente
+  // se quede con Aria mientras se ejecutan. Los nombres y argumentos siguen
+  // en inglés para compartir el mismo dispatch con la variante inglesa.
+  "tools": [
+    {
+      "type": "function",
+      "name": "symptom_lookup",
+      "description": "Search the medical symptom database for matching conditions, severity indicators, red flags, and suggested follow-up questions. Use as soon as the patient describes symptoms, and weave the returned questions into the interview. The patient speaks Spanish — translate any follow-up questions into Spanish before asking.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "symptoms": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Reported symptoms in English, e.g. ['chest pain', 'nausea']"
+          },
+          "duration_hours": {
+            "type": "number",
+            "description": "How long symptoms have been present, in hours"
+          },
+          "severity": {
+            "type": "integer",
+            "description": "Patient-reported severity on a 1-10 scale"
+          }
+        },
+        "required": ["symptoms"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "drug_interaction_check",
+      "description": "Check the patient's medications against a clinical interaction database for dangerous combinations. Use whenever any medication is mentioned. Translate medication names to English generics (e.g. 'paracetamol' -> 'acetaminophen', 'warfarina' -> 'warfarin').",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "medications": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Names of the medications the patient is taking (English generics preferred)"
+          }
+        },
+        "required": ["medications"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "triage_assessment",
+      "description": "Score the patient's urgency on the Emergency Severity Index (ESI 1-5, where 1 is most critical) from the collected interview data. Call after the symptom deep-dive and red-flag screening.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "chief_complaint": {
+            "type": "string",
+            "description": "The main reason for the visit, in the patient's words"
+          },
+          "symptoms": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "All symptoms reported so far"
+          },
+          "severity_score": {
+            "type": "integer",
+            "description": "Patient-reported severity, 1-10"
+          },
+          "duration_hours": {
+            "type": "number",
+            "description": "Duration of symptoms in hours"
+          },
+          "age": {
+            "type": "integer",
+            "description": "Patient age in years, if known"
+          },
+          "vital_signs_abnormal": {
+            "type": "boolean",
+            "description": "True if the patient reported abnormal vitals (e.g. measured fever, racing heart)"
+          },
+          "has_red_flags": {
+            "type": "boolean",
+            "description": "True if any emergency red flag symptoms are present"
+          }
+        },
+        "required": ["chief_complaint", "symptoms", "severity_score"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "generate_soap_note",
+      "description": "Generate a structured SOAP (Subjective, Objective, Assessment, Plan) clinical note from the triage conversation. Call near the end of the interview, after triage_assessment. Write the note in English for the medical record.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subjective": {
+            "type": "string",
+            "description": "Patient's reported symptoms, history, and concerns"
+          },
+          "objective": {
+            "type": "string",
+            "description": "Observable data: reported vitals, severity scores, duration"
+          },
+          "assessment": {
+            "type": "string",
+            "description": "Clinical impression: possible conditions and triage level"
+          },
+          "plan": {
+            "type": "string",
+            "description": "Recommended next steps: self-care, telehealth, urgent care, or ER"
+          },
+          "icd10_codes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Relevant ICD-10 codes, e.g. ['R07.9']"
+          }
+        },
+        "required": ["subjective", "assessment", "plan"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "book_appointment",
+      "description": "Book a follow-up appointment with the appropriate healthcare provider. Offer once the patient has a triage recommendation and agrees to schedule.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_type": {
+            "type": "string",
+            "enum": ["telehealth", "urgent_care", "primary_care", "specialist", "emergency"],
+            "description": "Type of appointment to book"
+          },
+          "preferred_date": {
+            "type": "string",
+            "description": "Patient's preferred date, e.g. 'tomorrow' or 'next Monday'"
+          },
+          "preferred_time": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "evening"],
+            "description": "Preferred time of day"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Brief reason for the appointment"
+          }
+        },
+        "required": ["appointment_type", "reason"]
+      },
+      "execution_mode": "interactive",
+      "timeout_seconds": 15
+    },
+    {
+      "type": "function",
+      "name": "emergency_alert",
+      "description": "CRITICAL: trigger an emergency alert when life-threatening symptoms are detected (chest pain, difficulty breathing, stroke signs, severe bleeding, suicidal ideation, anaphylaxis). Call IMMEDIATELY when red flags appear, then tell the patient to call 911.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "emergency_type": {
+            "type": "string",
+            "enum": ["cardiac", "respiratory", "neurological", "trauma", "mental_health", "allergic", "other"],
+            "description": "Type of emergency detected"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief description of the emergency"
+          },
+          "patient_symptoms": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Critical symptoms that triggered the alert"
+          }
+        },
+        "required": ["emergency_type", "description"]
+      },
+      "execution_mode": "hold",
+      "timeout_seconds": 10
+    }
+  ]
+}
