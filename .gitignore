@@ -6,6 +6,3 @@ __pycache__/
 .DS_Store
 .pytest_cache/
 .vscode/
-
-# Generated presentation binaries — keep local, never push
-*.pptx
