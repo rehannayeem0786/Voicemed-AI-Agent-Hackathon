@@ -154,6 +154,27 @@ in `.env`), which is the exact binding path the running app takes. Without an
 
 ---
 
+## ☁️ Deploy to Vercel
+
+The app runs on Vercel as a **serverless Python function** (`api/index.py` wraps the FastAPI app). The voice demo works fully because the browser connects **directly** to AssemblyAI's WebSocket — the server only handles the short HTTP calls.
+
+1. Push this repo to GitHub (already done).
+2. Go to [vercel.com/new](https://vercel.com/new) → **Import** the `Voicemed-AI-Agent-Hackathon` repo.
+3. Framework preset: **Other** (leave build command and output dir empty — `vercel.json` handles routing).
+4. Add environment variables (Project → Settings → Environment Variables):
+   - `ASSEMBLYAI_API_KEY` = your key (**required**)
+   - `VOICEMED_DB_PATH` = `/tmp/voicemed.db` (recommended — the serverless filesystem is read-only except `/tmp`)
+5. Click **Deploy**. Done — every path (`/`, `/static/*`, `/token`, `/session-config`, `/tools/call`, `/sessions/*`) routes to the function.
+
+**Serverless caveats:**
+- SQLite in `/tmp` is **per-instance and ephemeral** — session history/stats reset on cold starts. Fine for a demo; wire Turso/Neon/Postgres for durable storage.
+- The legacy `/ws` bridge is unavailable (Vercel functions don't do WebSockets) — unused by the UI, which uses the browser-direct flow.
+- First request after idle may take ~1–2 s (cold start).
+
+> Prefer a traditional always-on host (Render, Railway, Fly.io, Cloud Run) if you want persistent SQLite, the `/ws` bridge, and zero cold starts — no code changes needed, just `uvicorn app.main:app`.
+
+---
+
 ## 📁 Project structure
 
 ```

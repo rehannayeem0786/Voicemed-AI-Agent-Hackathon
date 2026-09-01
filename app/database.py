@@ -5,7 +5,25 @@ import json
 import os
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "voicemed.db")
+DB_PATH = os.environ.get("VOICEMED_DB_PATH") or os.path.join(
+    os.path.dirname(__file__), "..", "voicemed.db"
+)
+
+_initialized = False
+
+
+async def _ensure_init():
+    """Create the schema on first use.
+
+    Startup (lifespan) calls init_db(), but serverless platforms like Vercel
+    may not run lifespan events and use ephemeral filesystems — so every
+    public function lazily ensures the schema exists (idempotent). Point
+    VOICEMED_DB_PATH at a writable location (e.g. /tmp) on such platforms.
+    """
+    global _initialized
+    if not _initialized:
+        await init_db()
+        _initialized = True
 
 
 async def init_db():
@@ -49,6 +67,7 @@ async def init_db():
 
 async def create_session(session_id: str):
     """Create a new session record."""
+    await _ensure_init()
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             "INSERT OR REPLACE INTO sessions (id, started_at) VALUES (?, ?)",
@@ -73,6 +92,7 @@ async def update_session(session_id: str, **kwargs):
         raise ValueError(f"Unknown session column(s): {', '.join(sorted(rejected))}")
     if not updates:
         return
+    await _ensure_init()
     async with aiosqlite.connect(DB_PATH) as db:
         for key, value in updates.items():
             if isinstance(value, (dict, list)):
@@ -86,6 +106,7 @@ async def update_session(session_id: str, **kwargs):
 
 async def end_session(session_id: str):
     """Mark session as ended."""
+    await _ensure_init()
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             "UPDATE sessions SET ended_at = ?, status = 'completed' WHERE id = ?",
@@ -96,6 +117,7 @@ async def end_session(session_id: str):
 
 async def save_triage_result(session_id: str, result: dict):
     """Save a triage assessment result."""
+    await _ensure_init()
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """INSERT INTO triage_history
@@ -116,6 +138,7 @@ async def save_triage_result(session_id: str, result: dict):
 
 async def get_sessions():
     """Get all sessions with their triage results."""
+    await _ensure_init()
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
@@ -127,6 +150,7 @@ async def get_sessions():
 
 async def get_session(session_id: str):
     """Get a single session by ID."""
+    await _ensure_init()
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
