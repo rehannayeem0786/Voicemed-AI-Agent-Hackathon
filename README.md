@@ -5,6 +5,8 @@
 > ✅ **Protocol verified live** against `wss://agents.assemblyai.com` — session.accepted → greeting audio → clean session end (`python smoke_test.py`)
 > ✅ **44 automated tests passing** (`python -m pytest tests`)
 > 🌍 **Bilingual triage — English & Español** — plus a live interview progress tracker and a built-in 🎬 Demo Copilot for flawless presenting
+>
+> ✨ **Redesigned clinical dashboard** — dark-glass theme, chat-style transcript, interview stepper, ESI gauge & tool timeline
 
 **VoiceMed AI** is Aria — an empathetic AI triage nurse you talk to, not type at. She runs a structured clinical interview over a single real-time voice connection, scores urgency on the **Emergency Severity Index (ESI 1–5)**, catches **dangerous drug interactions**, fires **emergency escalation** on red-flag symptoms, and writes an **EMR-ready SOAP note** with ICD-10 codes — all while the patient simply speaks.
 
@@ -26,6 +28,21 @@ Interrupt Aria anytime — barge-in is semantic and playback flushes instantly.
 **Presenting?** Click **🎬 Demo Copilot** (or press `Alt+D`): it shows each line to *say* and what to *watch for*, and auto-advances the moment Aria hears you — while the **progress tracker** lights up Complaint → Symptoms → Medications → Red flags → ESI → SOAP → Booking as the interview actually happens. Noisy room? *Skip* keeps the story moving.
 
 **¿En español?** Switch the 🌐 selector to **Español** before starting — Aria becomes your *enfermera de triaje* with a native Spanish voice (the Demo Copilot recognizes both languages).
+
+---
+
+## 🖥 The dashboard (redesigned)
+
+A clinical dark-glass theme — deep navy, teal→cyan accent, red reserved strictly for alerts, Inter + Space Grotesk type:
+
+- **Sticky glass header** — live session status pill, ⚡ speech→reply latency chip, ⏱ session timer, total triage count
+- **Chat-style transcript** — Aria left, patient right, system notices centered; interim (streaming) words appear live
+- **Interview stepper** — Complaint → Symptoms → Medications → Red flags → ESI → SOAP → Booking lights up with ✓ as milestones *actually* happen in the session
+- **ESI gauge** — green→amber→red track with tick marks and a severity-colored animated fill; the big ESI number is colored by acuity
+- **Tool timeline** — every server-side tool call surfaces with its arguments and a running ✓/✗ status
+- **Medication safety cards & SOAP document** — severity chips for interactions; downloadable Markdown SOAP note
+- **Emergency banner** — pulsing red alert with 911/988 guidance when `emergency_alert` fires
+- Accessible (`:focus-visible`, `prefers-reduced-motion`) and responsive down to phone widths
 
 ---
 
@@ -112,6 +129,10 @@ python publish_agent.py --lang es  # Spanish variant → saves AGENT_ID_ES
 python -m pytest tests -q         # 44 tests: config schema, tools, protocol loop (mocked WS)
 python smoke_test.py              # live end-to-end: token → session.update → session.ready
                                   # → greeting audio → session.end/session.ended, real API
+
+# UI checks
+node --check static/app.js && node --check static/audio-processor.js   # JS syntax valid
+python scripts/check_ids.py       # every DOM id referenced by app.js exists in index.html
 ```
 
 Expected smoke-test output (recorded run):
@@ -145,7 +166,7 @@ in `.env`), which is the exact binding path the running app takes. Without an
 │   ├── database.py                # aiosqlite session persistence + stats
 │   └── tools/                     # the six clinical tools
 ├── data/                          # symptom / interaction / ICD-10 / appointment knowledge bases
-├── static/                        # index.html · app.js · audio-processor.js (AudioWorklets) · style.css
+├── static/                        # redesigned dashboard: index.html · style.css (dark-glass theme) · app.js · audio-processor.js (AudioWorklets)
 ├── tests/                         # 44 pytest tests (config, tools, WS protocol loop)
 ├── publish_agent.py               # publish the JSONC as a stored agent (browser + phone)
 └── smoke_test.py                  # live protocol verification against the real API

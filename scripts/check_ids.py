@@ -1,5 +1,10 @@
 """Cross-check: every DOM id referenced by static/app.js must exist in index.html."""
 import re
+import sys
+
+# Windows consoles default to cp1252 and crash on the ✔ symbol; force UTF-8.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 js = open("static/app.js", encoding="utf-8").read()
 html = open("static/index.html", encoding="utf-8").read()

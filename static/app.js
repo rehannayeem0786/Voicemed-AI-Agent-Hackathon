@@ -166,6 +166,7 @@ async function startSession() {
   if (sessionActive) return;
   sessionActive = true;
   sessionReady = false;
+  sessionRecorded = false;
   pendingToolResults.length = 0;
   lastEventType = null;
   resetProgress();
@@ -232,7 +233,7 @@ function onWSError(err) {
 }
 
 function cleanup() {
-  recordSessionOnce(); // persist transcript + SOAP for the audit log
+  void recordSessionOnce(); // persist transcript + SOAP for the audit log (safe: never throws)
   sessionActive = false;
   sessionReady = false;
   agentSpeaking = false;
@@ -404,12 +405,15 @@ function flushToolResults() {
 
 // ─── Tool side effects on the dashboard ────────────────────────
 
+// Colors tuned for the dark UI: bright enough to read on navy, ordered
+// red (critical) → amber → green/teal (non-urgent) to match the gauge,
+// which runs green on the left (ESI 5) to red on the right (ESI 1).
 const ESI = {
-  1: { text: "Resuscitation — immediate, life-saving intervention", color: "#7f1d1d", pct: 100 },
-  2: { text: "Emergent — high risk, do not wait", color: "#dc2626", pct: 84 },
-  3: { text: "Urgent — several resources needed", color: "#ea580c", pct: 62 },
-  4: { text: "Less urgent — one resource expected", color: "#16a34a", pct: 36 },
-  5: { text: "Non-urgent — safe to manage at home", color: "#0d9488", pct: 14 },
+  1: { text: "Resuscitation — immediate, life-saving intervention", color: "#f87171", pct: 100 },
+  2: { text: "Emergent — high risk, do not wait", color: "#ef4444", pct: 84 },
+  3: { text: "Urgent — several resources needed", color: "#f59e0b", pct: 62 },
+  4: { text: "Less urgent — one resource expected", color: "#34d399", pct: 36 },
+  5: { text: "Non-urgent — safe to manage at home", color: "#2dd4bf", pct: 14 },
 };
 
 function renderToolSideEffects(name, result) {
@@ -699,6 +703,53 @@ async function loadSessionCount() {
   }
 }
 
+// ─── Session audit log ─────────────────────────────────────────
+// Persist the finished session (transcript + SOAP + triage) via
+// POST /sessions/record so it counts in the header stats. Runs at most
+// once per session and never throws — cleanup() depends on it, so any
+// failure here is logged, not propagated.
+let sessionRecorded = false;
+
+async function recordSessionOnce() {
+  if (sessionRecorded || !sessionStart) return;
+  sessionRecorded = true;
+  try {
+    const transcript = [...elements.transcript.querySelectorAll(".transcript-msg")]
+      .filter((el) => !el.classList.contains("interim"))
+      .map((el) => ({
+        role: el.classList.contains("transcript-user") ? "user"
+          : el.classList.contains("transcript-agent") ? "agent" : "system",
+        text: el.querySelector(".msg-text")?.textContent ?? "",
+      }));
+
+    const payload = {
+      transcript,
+      soap_note: lastSoap || null,
+      duration_seconds: (Date.now() - sessionStart) / 1000,
+    };
+
+    // Reconstruct the triage result from what the dashboard is showing.
+    const esiMatch = elements.triageLevel.textContent.match(/\d/);
+    if (esiMatch) {
+      payload.triage_result = {
+        esi_level: parseInt(esiMatch[0], 10),
+        text: elements.triageLevelText.textContent,
+        recommendation: elements.triageRec.textContent,
+      };
+    }
+
+    const res = await fetch("/sessions/record", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`/sessions/record returned ${res.status}`);
+    loadSessionCount(); // refresh the header counter with the new total
+  } catch (err) {
+    console.error("Could not record session:", err);
+  }
+}
+
 async function loadSessionConfig() {
   const lang = elements.langSelect ? elements.langSelect.value : "en";
   const res = await fetch(`/session-config?lang=${encodeURIComponent(lang)}`);
@@ -726,8 +777,11 @@ function drawWaveform() {
 
   const t = performance.now() / 1000;
   if (agentSpeaking) {
-    // Aria is talking — animated voice wave
-    ctx.strokeStyle = "#38bdf8";
+    // Aria is talking — animated voice wave in the brand teal→cyan gradient
+    const wave = ctx.createLinearGradient(0, 0, w, 0);
+    wave.addColorStop(0, "#2dd4bf");
+    wave.addColorStop(1, "#38bdf8");
+    ctx.strokeStyle = wave;
     ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -746,7 +800,7 @@ function drawWaveform() {
     for (let i = 0; i < bars; i++) {
       const wiggle = 0.35 + 0.65 * Math.abs(Math.sin(i * 1.7 + t * 3));
       const bh = Math.max(3, level * (h / 2 - 8) * wiggle + 3);
-      ctx.fillStyle = level > 0.03 ? "#22d3ee" : "#334155";
+      ctx.fillStyle = level > 0.03 ? "#2dd4bf" : "#223049";
       const x = i * bw + 1.5;
       const y = (h - bh) / 2;
       ctx.beginPath();

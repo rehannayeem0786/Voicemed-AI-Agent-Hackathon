@@ -3,33 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoiceMed AI | Voice-Powered Medical Triage</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A9%BA%3C/text%3E%3C/svg%3E">
+    <meta name="description" content="VoiceMed AI — talk to Aria, a voice-first AI triage nurse that scores ESI urgency, catches drug interactions and writes EMR-ready SOAP notes in one live conversation.">
+    <meta name="theme-color" content="#070b14">
+    <title>VoiceMed AI · Voice-Powered Medical Triage</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23070b14'/%3E%3Cpath d='M12 58h16l8-24 12 38 9-26 5 12h26' fill='none' stroke='%232dd4bf' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="app-container">
+
+        <!-- ── Top bar: brand, live stats, session status ─────────── -->
         <header class="header">
             <div class="logo">
-                <div class="logo-icon">+</div>
-                <h1>VoiceMed <span>AI</span></h1>
+                <div class="logo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12h4l2.5-6 4.5 12 2.5-6H21"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>VoiceMed <span>AI</span></h1>
+                    <p class="logo-tag">Aria · voice triage nurse</p>
+                </div>
             </div>
+
             <div class="session-stats">
+                <div class="status-pill" title="Session status">
+                    <div id="status-indicator" class="status-dot status-idle"></div>
+                    <span id="status-text" class="status-text">Ready to start</span>
+                </div>
                 <span class="stat-chip" id="latency-chip" title="Time from end of speech to first audio of the reply">&#9889; <span id="latency-value">--</span></span>
                 <span class="stat-chip hidden" id="timer-chip">&#9201; <span id="session-timer">0:00</span></span>
-                <span class="stat-chip">&#129658; <span id="session-counter">...</span> triage sessions</span>
-                <div id="status-indicator" class="status-dot status-idle"></div>
-                <span id="status-text" class="status-text">Ready to start</span>
+                <span class="stat-chip" title="Total triage sessions on record">&#129658; <span id="session-counter">...</span> triage sessions</span>
             </div>
         </header>
 
+        <!-- ── Emergency escalation banner (revealed by emergency_alert) ── -->
         <div id="emergency-banner" class="emergency-banner hidden" role="alert">
             <div class="emergency-header">
-                <div class="pulse-icon">&#128680;</div>
-                <div>
+                <div class="pulse-icon" aria-hidden="true">&#128680;</div>
+                <div class="emergency-title">
                     <h2>EMERGENCY DETECTED</h2>
                     <p id="emergency-sub">Escalation protocol activated</p>
                 </div>
@@ -39,14 +54,17 @@
         </div>
 
         <main class="main-content">
+
             <!-- Left column: voice interface and transcript -->
             <section class="panel voice-panel">
                 <div class="voice-header">
-                    <h2>Live Consultation</h2>
-                    <p>Talk to <strong>Aria</strong>, your AI triage nurse. Speak naturally, she will ask one question at a time.</p>
+                    <div class="vh-copy">
+                        <h2>Live Consultation</h2>
+                        <p>Talk to <strong>Aria</strong>, your AI triage nurse. Speak naturally &mdash; she asks one question at a time.</p>
+                    </div>
                     <div class="voice-options">
-                        <label class="lang-select" for="lang-select" title="Triage language — applies to the next session">
-                            🌐 <select id="lang-select" name="lang">
+                        <label class="lang-select" for="lang-select" title="Triage language &mdash; applies to the next session">
+                            &#127760; <select id="lang-select" name="lang">
                                 <option value="en">English</option>
                                 <option value="es">Español</option>
                             </select>
@@ -64,9 +82,8 @@
                     <li data-step="soap"><span class="pt-dot"></span><span class="pt-label">SOAP note</span></li>
                     <li data-step="booking"><span class="pt-dot"></span><span class="pt-label">Booking</span></li>
                 </ol>
-
                 <div class="waveform-container">
-                    <canvas id="waveform-canvas"></canvas>
+                    <canvas id="waveform-canvas" aria-label="Live voice activity"></canvas>
                     <div class="speaker-hint" id="speaker-hint">Aria is listening</div>
                     <div class="controls">
                         <button id="start-btn" class="btn btn-primary">
@@ -82,10 +99,10 @@
                     <h3>Transcript</h3>
                     <div id="transcript-container" class="transcript-container">
                         <div class="transcript-msg transcript-system">
-                            <span class="msg-icon">&#8505;</span>
+                            <span class="msg-icon" aria-hidden="true">&#8505;</span>
                             <div class="msg-content">
                                 <span class="msg-label">System</span>
-                                <p class="msg-text">Press <strong>Start Consultation</strong> and allow microphone access. Headphones recommended; the browser's echo cancellation handles speaker audio.</p>
+                                <p class="msg-text">Press <strong>Start Consultation</strong> and allow microphone access. Headphones recommended &mdash; the browser's echo cancellation handles speaker audio.</p>
                             </div>
                         </div>
                     </div>
@@ -97,7 +114,8 @@
 
                 <div id="triage-panel" class="panel triage-panel">
                     <div class="panel-header">
-                        <h2>Triage Assessment <span class="badge">ESI 1-5</span></h2>
+                        <h2>Triage Assessment <span class="badge">ESI 1&ndash;5</span></h2>
+                        <span class="panel-hint">Emergency Severity Index</span>
                     </div>
                     <div class="triage-display">
                         <div class="triage-score">
@@ -107,12 +125,12 @@
                         <div class="triage-gauge">
                             <div class="gauge-bg"><div id="triage-bar" class="gauge-fill"></div></div>
                             <div class="gauge-markers">
-                                <span>5 &#183; non-urgent</span><span>3 &#183; urgent</span><span>1 &#183; critical</span>
+                                <span>5 &middot; non-urgent</span><span>3 &middot; urgent</span><span>1 &middot; critical</span>
                             </div>
                         </div>
                         <div class="triage-recommendation">
                             <h3>Recommendation</h3>
-                            <p id="triage-recommendation">Aria will score acuity after the symptom interview...</p>
+                            <p id="triage-recommendation">Aria will score acuity after the symptom interview&hellip;</p>
                         </div>
                     </div>
                 </div>
@@ -127,9 +145,10 @@
                 <div class="panel tool-panel">
                     <div class="panel-header">
                         <h2>AI reasoning &amp; actions</h2>
+                        <span class="panel-hint">server-side tools</span>
                     </div>
                     <div id="tool-activity" class="tool-activity-list">
-                        <div class="tool-empty-state">Waiting for Aria to act...</div>
+                        <div class="tool-empty-state">Waiting for Aria to act&hellip;</div>
                     </div>
                 </div>
 
@@ -139,7 +158,7 @@
                         <button id="download-soap" class="btn-icon hidden" title="Download SOAP note (Markdown)">&#128229;</button>
                     </div>
                     <div class="soap-container">
-                        <pre id="soap-content" class="soap-empty">A structured SOAP note will be generated at the end of the interview...</pre>
+                        <pre id="soap-content" class="soap-empty">A structured SOAP note will be generated at the end of the interview&hellip;</pre>
                     </div>
                 </div>
 
@@ -147,7 +166,7 @@
         </main>
 
         <footer class="footer">
-            <p>VoiceMed AI &#8212; voice triage demo built on the <strong>AssemblyAI Voice Agent API</strong>. Not a medical device; for demonstration only. In a real emergency call 911 (or 988 for crisis support).</p>
+            <p>VoiceMed AI &mdash; voice triage demo built on the <strong>AssemblyAI Voice Agent API</strong>. Not a medical device; for demonstration only. In a real emergency call <strong>911</strong> (or <strong>988</strong> for crisis support).</p>
         </footer>
 
         <aside id="demo-copilot" class="demo-copilot hidden" aria-label="Guided demo script">
