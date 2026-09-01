@@ -154,24 +154,21 @@ in `.env`), which is the exact binding path the running app takes. Without an
 
 ---
 
-## ☁️ Deploy to Vercel
+## ☁️ Deploy to Render
 
-The app runs on Vercel as a **serverless Python function** (`api/index.py` wraps the FastAPI app). The voice demo works fully because the browser connects **directly** to AssemblyAI's WebSocket — the server only handles the short HTTP calls.
+The repo ships with a **`render.yaml` Blueprint**, so deployment is nearly one click:
 
-1. Push this repo to GitHub (already done).
-2. Go to [vercel.com/new](https://vercel.com/new) → **Import** the `Voicemed-AI-Agent-Hackathon` repo.
-3. Framework preset: **Other** (leave build command and output dir empty — `vercel.json` handles routing).
-4. Add environment variables (Project → Settings → Environment Variables):
-   - `ASSEMBLYAI_API_KEY` = your key (**required**)
-   - `VOICEMED_DB_PATH` = `/tmp/voicemed.db` (recommended — the serverless filesystem is read-only except `/tmp`)
-5. Click **Deploy**. Done — every path (`/`, `/static/*`, `/token`, `/session-config`, `/tools/call`, `/sessions/*`) routes to the function.
+1. Go to [dashboard.render.com](https://dashboard.render.com) → sign in with GitHub → **New → Blueprint** → select this repo. Render reads `render.yaml` and pre-fills everything.
+   *(Or manually: **New → Web Service** → pick the repo → Runtime **Python** → Build: `pip install -r requirements.txt` → Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.)*
+2. When prompted, set the secret **`ASSEMBLYAI_API_KEY`** (your key).
+3. Click **Apply** / **Create Service** — you get an always-on HTTPS URL like `https://voicemed-ai.onrender.com`.
 
-**Serverless caveats:**
-- SQLite in `/tmp` is **per-instance and ephemeral** — session history/stats reset on cold starts. Fine for a demo; wire Turso/Neon/Postgres for durable storage.
-- The legacy `/ws` bridge is unavailable (Vercel functions don't do WebSockets) — unused by the UI, which uses the browser-direct flow.
-- First request after idle may take ~1–2 s (cold start).
+**Why Render fits this app better than serverless (Vercel):**
+- Always-on process — no cold starts, no function-bundle file limits
+- **WebSockets supported** — the `/ws` bridge works too, not just the browser-direct flow
+- Persistent disk option — attach a disk and set `VOICEMED_DB_PATH=/data/voicemed.db` so session history survives redeploys
 
-> Prefer a traditional always-on host (Render, Railway, Fly.io, Cloud Run) if you want persistent SQLite, the `/ws` bridge, and zero cold starts — no code changes needed, just `uvicorn app.main:app`.
+**Free-plan note:** the service sleeps after ~15 min without traffic; the first request then takes ~30–60 s to wake up. Keep the tab open (or ping `/api/health` on a schedule) during your demo.
 
 ---
 
