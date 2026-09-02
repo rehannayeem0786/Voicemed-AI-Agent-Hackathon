@@ -16,3 +16,10 @@ services:
         value: "3.11.9"
       - key: ASSEMBLYAI_API_KEY
         sync: false # set in the Render dashboard — never commit the key
+      # Optional: bind to published stored agents (publish_agent.py).
+      # Leave empty/absent to run inline from agents/voicemed_triage*.jsonc —
+      # both paths are tested and behave identically.
+      - key: AGENT_ID
+        sync: false # English stored agent (you have c9debfb7… in local .env)
+      - key: AGENT_ID_ES
+        sync: false # Spanish stored agent — leave empty if never published
